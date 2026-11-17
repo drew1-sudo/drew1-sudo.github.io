@@ -4,11 +4,16 @@ Track income, expenses, budgets and reports for a business, in Philippine Peso (
 
 ## Run
 
-Requires Node.js 22.13 or newer (uses the built-in `node:sqlite`). No `npm install` needed.
+Only the computer that runs the server needs this. Phones and other devices just open the link in a browser.
 
-```
-npm start
-```
+1. Install Node.js version 22.13 or newer from https://nodejs.org. To check what you have, run `node -v`.
+2. In this folder, run:
+
+   ```
+   npm start
+   ```
+
+There's nothing else to install first. The app saves its data in `data/budget.db`, which it creates on first start.
 
 Open http://localhost:5050. To use another port: `PORT=5051 npm start`.
 

@@ -583,14 +583,47 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.on('error', (err) => {
-  if (err.code === 'EADDRINUSE') {
-    console.error(`Port ${PORT} is already in use. Start on another port, e.g. PORT=5051 npm start`);
-    process.exit(1);
-  }
-  throw err;
+// Addresses other devices on the same Wi-Fi can use.
+function lanUrls(port) {
+  return Object.values(require('node:os').networkInterfaces())
+    .flat()
+    .filter((a) => a && a.family === 'IPv4' && !a.internal && /^(192\.168\.|10\.)/.test(a.address))
+    .map((a) => `http://${a.address}:${port}`);
+}
+
+function printLinks(port) {
+  console.log(`  This computer:            http://localhost:${port}`);
+  for (const url of lanUrls(port)) console.log(`  Phone / other devices:    ${url}  (same Wi-Fi)`);
+}
+
+// If the port is busy: when it's this app already running, just show its links;
+// otherwise move to the next free port.
+async function listen(port, triesLeft) {
+  server.removeAllListeners('error');
+  server.once('error', async (err) => {
+    if (err.code !== 'EADDRINUSE') throw err;
+    try {
+      const res = await fetch(`http://localhost:${port}/api/meta`, { signal: AbortSignal.timeout(1500) });
+      if (res.ok && (await res.json()).expenseCategories) {
+        console.log('Business Budget Tracker is already running. Open it here:');
+        printLinks(port);
+        process.exit(0);
+      }
+    } catch {}
+    if (triesLeft <= 0) {
+      console.error(`No free port found near ${PORT}. Close other apps or run: PORT=6000 npm start`);
+      process.exit(1);
+    }
+    console.log(`Port ${port} is used by another app, trying ${port + 1}...`);
+    listen(port + 1, triesLeft - 1);
+  });
+  server.listen(port);
+}
+
+server.once('listening', () => {
+  console.log('Business Budget Tracker is running. Open it here:');
+  printLinks(server.address().port);
+  console.log('Keep this window open. Press Ctrl+C to stop.');
 });
 
-server.listen(PORT, () => {
-  console.log(`Business Budget Tracker running at http://localhost:${PORT}`);
-});
+listen(PORT, 10);
