@@ -161,7 +161,10 @@ async function boot() {
   try {
     state.meta = await api('GET', '/api/meta');
   } catch {
-    $('#boot').innerHTML = '<p class="muted">Could not reach the server. Start it with <code>npm start</code> and reload.</p>';
+    // Usually means index.html was opened directly (file:// or a live-reload server) instead of through server.js.
+    $('#boot').innerHTML = `<p class="muted" style="max-width:460px;text-align:center;padding:16px">Could not reach the budget server from <code>${esc(location.origin)}</code>.<br><br>
+      Run <code>npm start</code> in the budget folder, then open <strong>http://localhost:5050</strong> on this computer,
+      or <strong>http://&lt;this computer's IP&gt;:5050</strong> from another device on the same Wi-Fi.</p>`;
     return;
   }
   if (window.Chart) {
